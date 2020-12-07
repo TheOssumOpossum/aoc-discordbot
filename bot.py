@@ -3,64 +3,10 @@ from discord.ext import tasks, commands
 from contextlib import suppress
 tabulate.PRESERVE_WHITESPACE = True
 from utils import arg_parser
-from secret import *
-import timecog
-
-YEAR = "2020"
-DNF_STRING = "             DNF"
-H24_STRING = "            >24h"
-TIMEZONE = pytz.timezone("US/Eastern")
-TEST_MODE = False
-
-SECONDS_IN_A_DAY = 86400
-
-COOKIES = {
-    'session': os.environ.get('ADVENT_COOKIE', SESSION_COOKIE)
-}
-DISCORD_CLIENT_ID = os.environ.get('ADVENT_BOT_ID', DISCORD_CLIENT_ID)
-LEADERBOARD = os.environ.get('LEADERBOARD', LEADERBOARD)
-
-last_data_update = {}
-test_data = ""
-json_data = {}
-data = []
-
-class Member():
-    name = ""
-    score = 0
-    days = {}
-    last_star_ts = float("inf")
-    def __init__(self, name, score, days, last_star_ts):
-        self.name = name
-        self.score = score
-        self.days = days
-        self.last_star_ts = last_star_ts
-
-class Day():
-    part1 = 0
-    part2 = 0
-
-    def __init__(self, part1, part2):
-        self.part1 = part1
-        self.part2 = part2
-
-    def __str__(self):
-        return "p1:{0} p2:{1}".format(self.part1, self.part2)
-
-    def __repr__(self):
-        return self.__str__()
-
-
-# class MyClient(discord.Client):
-#     async def on_ready(self):
-#         print('discordbot... Logged on as {0}!'.format(self.user))
-#         await client.change_presence(status=discord.Status.invisible)
-
-#     async def on_message(self, message):
-#         if message.author.name != self.user.name:
-#             print('discordbot... Message from {0.author}: {0.content}'.format(message))
-#             await handle_message(message)
-
+from secret import LID_1, LID_2, LID_3
+import timecog, table_printer
+from global_vars import *
+from advent_data_fetcher import fetch_data
 
 async def handle_message(message):
     content = message.content.lower()
@@ -94,72 +40,6 @@ async def handle_message(message):
 async def send_message(text, channel):
     await channel.send(text)
 
-############### Fetching Data ################################
-
-def fetch_data(force=False, year=YEAR, leaderboard=LEADERBOARD):
-    global last_data_update
-    now = datetime.datetime.now()
-    if force or (year, leaderboard) not in last_data_update:
-        print("  lb command... fetching data, none exists" if not force else "  lb command... FORCE FETCHING DATA")
-        last_data_update[(year, leaderboard)] = now
-        if get_json_data(year, leaderboard):
-            update_data()
-    elif (now - last_data_update[(year, leaderboard)]) > datetime.timedelta(minutes=15):
-        print("  lb command... fetching data, 15 minutes has passed")
-        if get_json_data(year, leaderboard):
-            update_data()
-    else:
-        print("  lb command... using existing data, 15 minutes not passed")
-
-
-def get_json_data(year, leaderboard):
-    if leaderboard=="1":
-        leaderboard = LID_1
-    elif leaderboard=="2":
-        leaderboard = LID_2
-    elif leaderboard=="3":
-        leaderboard = LID_3
-
-    global json_data
-    global data
-    data = []
-    if TEST_MODE:
-        json_data = json.loads(test_data)
-    else:
-        URL="https://adventofcode.com/" + year + "/leaderboard/private/view/" + leaderboard + ".json"
-        with requests.get(URL, cookies=COOKIES) as response:
-            html = response.text
-            json_data = json.loads(html)
-
-    return json_data
-
-def update_data():
-    for member_id in json_data["members"]:
-        data.append(read_member(member_id))
-
-def read_member(id):
-    member = json_data["members"][id]
-    name = member["name"]
-    last_star_ts = member["last_star_ts"]
-    score = member["local_score"]
-    days = read_days(member["completion_day_level"])
-    return Member(name, score, days, last_star_ts)
-
-def read_days(days):
-    days_output = {}
-    for day_num in days:
-        day = days[day_num]
-        if "1" in day:
-            part1 = day["1"]["get_star_ts"]
-        else:
-            continue
-        if "2" in day:
-            part2 = day["2"]["get_star_ts"]
-        else:
-            part2 = ''
-        days_output[day_num] = Day(part1, part2)
-    return days_output
-
 ##################### Leaderboard command handler ###############################
 
 #lb                 get todays leaderboard (short)
@@ -172,17 +52,18 @@ def read_days(days):
 async def handle_command_lb(arg_ls, arg_dic, channel):
     year = YEAR if "year" not in arg_dic else arg_dic["year"]
     leaderboard = LEADERBOARD if "leaderboard" not in arg_dic else arg_dic["leaderboard"]
-    fetch_data("force" in arg_dic, year, leaderboard)
+    global data
+    data = fetch_data(year, leaderboard, "force" in arg_dic)
 
     if len(arg_ls) == 0:
         day = str(datetime.datetime.now(TIMEZONE).day)
         table = get_table(day)
         if "detailed" in arg_dic:
             #lb d
-            message = print_full_lb_table(table, day, year, leaderboard)
+            message = table_printer.print_full_lb_table(table, day, year, leaderboard)
         else:
             #lb
-            message = print_short_lb_table(table, day, year, leaderboard)
+            message = table_printer.print_short_lb_table(table, day, year, leaderboard)
     else:
         day = arg_ls[0]
         if int(day) > int(datetime.datetime.now(TIMEZONE).day):
@@ -191,10 +72,10 @@ async def handle_command_lb(arg_ls, arg_dic, channel):
         table = get_table(day,sorter="today_score")
         if "detailed" in arg_dic:
             #lb 1 d
-            message = print_full_lb_table_specific_day(table, day, year, leaderboard)
+            message = table_printer.print_full_lb_table_specific_day(table, day, year, leaderboard)
         else:
             #lb 1
-            message = print_short_lb_table_specific_day(table, day, year, leaderboard)
+            message = table_printer.print_short_lb_table_specific_day(table, day, year, leaderboard)
 
     await send_message(message, channel)
 
@@ -388,50 +269,6 @@ def get_times_for_day_part2(day):
             times.append(member.days[day].part2)
     times.sort()
     return times
-
-########################## PRINT TABLES ####################################
-
-def print_full_lb_table(table, day, year, leaderboard):
-    table_str = []
-    for row in table:
-        table_str.append(row[:-2])
-    table_str = tabulate.tabulate(table_str, headers=["#", "+-", "Score", "Name", "CompletionTime", "pts", "Part1", "pts", "Part2", "pts"])
-    return add_header_footer(table_str, day, year, leaderboard)
-
-def print_short_lb_table(table, day, year, leaderboard):
-    table_str = []
-    for row in table:
-        table_str.append(row[:-6])
-    table_str = tabulate.tabulate(table_str, headers=["#", "+-", "Score", "Name", "CompletionTime", "pts"])
-    return add_header_footer(table_str, day, year, leaderboard)
-
-def print_short_lb_table_specific_day(table, day, year, leaderboard):
-    table_str = []
-    for row in table:
-        if row[4] != DNF_STRING:
-            table_str.append([row[0]] + row[3:-6])
-    table_str = tabulate.tabulate(table_str, headers=["#", "Name", "CompletionTime", "pts"])
-    return add_header_footer(table_str, day, year, leaderboard)
-
-def print_full_lb_table_specific_day(table, day, year, leaderboard):
-    table_str = []
-    for row in table:
-        if row[4] != DNF_STRING:
-            table_str.append([row[0]] + row[3:-2])
-    table_str = tabulate.tabulate(table_str, headers=["#", "Name", "CompletionTime", "pts", "Part1", "pts", "Part2", "pts"])
-    return add_header_footer(table_str, day, year, leaderboard)
-
-def add_header_footer(table, day, year, leaderboard):
-    minutes, seconds = divmod((datetime.datetime.now() - last_data_update[(year,leaderboard)]).total_seconds(), 60)
-    minutes = int(minutes)
-    seconds = int(seconds)
-    if seconds == 0:
-        daystr = "Day {0}     (last updated now)\n".format(day)
-    else:
-        daystr = "Day {0}     (last updated {1}{2}{3}seconds ago)\n".format(day, "" if minutes == 0 else minutes, "" if minutes == 0 else "minute " if minutes == 1 else "minutes ", seconds)
-    header = "```\n" + daystr
-    footer = "\n```"
-    return header + table + footer
 
 ###
 
