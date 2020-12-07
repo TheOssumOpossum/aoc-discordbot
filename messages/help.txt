@@ -1,0 +1,20 @@
+```
+  ?help - display commands
+
+  ?lb - ?leaderboard alias
+
+  ?leaderboard [day=today] [-d/--detailed] [-f/--force] [-l/--leaderboard=435300] [-y/--year=2020]
+
+    Displays the current advent of code leaderboard, sorted by score and oldest star
+
+      day - specify rankings for a certain day, sorted by part2 and part1 completion time, default to today's date
+
+      detailed - show part1 and part2 breakdown
+
+      force - force refresh rankings, default cooldown is 15 minutes
+
+      leaderboard - specify custom private leaderboard (for those only available to vinny), default adam's leadberbaord
+
+      year - specify custom year, default 2020
+
+```
