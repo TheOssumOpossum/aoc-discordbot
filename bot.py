@@ -28,7 +28,6 @@ async def handle_message(message):
         help_msg = f.read()
         f.close()
         await send_message(help_msg, message.channel)
-        await handle_command_lb(arg_ls, arg_dic, message.channel)
     elif channel_name == "advent-of-code-2020" and (command == "ping"):
         await send_message("pong", message.channel)
     elif channel_name == "advent-of-code-2020" and (command == "repo"):
