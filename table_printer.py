@@ -27,7 +27,7 @@ def print_short_lb_table_specific_day(table, day, year, leaderboard):
 def print_full_lb_table_specific_day(table, day, year, leaderboard):
     table_str = []
     for row in table:
-        if row[4] != DNF_STRING:
+        if row[6] != DNF_STRING:
             table_str.append([row[0]] + row[3:-2])
     table_str = tabulate.tabulate(table_str, headers=["#", "Name", "CompletionTime", "pts", "Part1", "pts", "Part2", "pts"])
     return add_header_footer(table_str, day, year, leaderboard)
