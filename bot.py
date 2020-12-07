@@ -22,7 +22,7 @@ async def handle_message(message):
     arg_ls, arg_dic = arg_parser(args)
 
     if channel_name == "advent-of-code-2020" and (command == "lb" or command == "leaderboard"):
-        await handle_command_lb(arg_ls, arg_dic, message.channel)
+        await handle_command_lb(arg_ls, arg_dic, message.channel, last_data_update)
     elif channel_name == "advent-of-code-2020" and (command == "help"):
         f = open("messages/help.txt",'r')
         help_msg = f.read()
@@ -48,7 +48,7 @@ async def send_message(text, channel):
 
 #-f force refresh data
 
-async def handle_command_lb(arg_ls, arg_dic, channel):
+async def handle_command_lb(arg_ls, arg_dic, channel, last_data_update):
     year = YEAR if "year" not in arg_dic else arg_dic["year"]
     leaderboard = LEADERBOARD if "leaderboard" not in arg_dic else arg_dic["leaderboard"]
     global data
@@ -59,10 +59,10 @@ async def handle_command_lb(arg_ls, arg_dic, channel):
         table = get_table(day)
         if "detailed" in arg_dic:
             #lb d
-            message = table_printer.print_full_lb_table(table, day, year, leaderboard)
+            message = table_printer.print_full_lb_table(table, day, year, leaderboard, last_data_update)
         else:
             #lb
-            message = table_printer.print_short_lb_table(table, day, year, leaderboard)
+            message = table_printer.print_short_lb_table(table, day, year, leaderboard, last_data_update)
     else:
         day = arg_ls[0]
         if int(day) > int(datetime.datetime.now(TIMEZONE).day):
@@ -71,10 +71,10 @@ async def handle_command_lb(arg_ls, arg_dic, channel):
         table = get_table(day,sorter="today_score")
         if "detailed" in arg_dic:
             #lb 1 d
-            message = table_printer.print_full_lb_table_specific_day(table, day, year, leaderboard)
+            message = table_printer.print_full_lb_table_specific_day(table, day, year, leaderboard, last_data_update)
         else:
             #lb 1
-            message = table_printer.print_short_lb_table_specific_day(table, day, year, leaderboard)
+            message = table_printer.print_short_lb_table_specific_day(table, day, year, leaderboard, last_data_update)
 
     await send_message(message, channel)
 
