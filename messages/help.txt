@@ -17,4 +17,8 @@
 
       year - specify custom year, default 2020
 
+  ?ping - pong
+
+  ?repo - returns github repo url
+
 ```

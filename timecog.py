@@ -14,7 +14,6 @@ class Heartbeat(commands.Cog):
 
    @tasks.loop(minutes=1)
    async def heartbeat(self):
-      alerted = False
       now = datetime.now(TIMEZONE)
       minute = now.minute
       hour = now.hour
@@ -22,9 +21,9 @@ class Heartbeat(commands.Cog):
          if self.msg_channel == '':
             self.msg_channel = get_channel(self.bot.get_all_channels(), "advent-of-code-2020")
             for g in self.bot.guilds:
-               if g.name.lower() == '@adventofcode':
+               if g.name.lower() == '@advent of code':
                   self.mention_role = g.id
-         await send_message("<@&{0}> second is 3".format(self.mention_role), self.msg_channel)
+         await send_message("<@&{0}> starts in 30 minutes!".format(self.mention_role), self.msg_channel)
 
    @heartbeat.before_loop
    async def before_update_loop(self):
