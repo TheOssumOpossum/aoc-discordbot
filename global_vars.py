@@ -19,3 +19,4 @@ json_data = {}
 data = []
 
 ####
+test_data = ''
