@@ -1,34 +1,36 @@
 import tabulate
 from datetime import datetime
-from global_vars import DNF_STRING
+from constants import DNF_STRING
+from table_col_constants import *
+tabulate.PRESERVE_WHITESPACE = True
 
 def print_full_lb_table(table, day, year, leaderboard, last_data_update):
     table_str = []
     for row in table:
-        table_str.append(row[:-2])
+        table_str.append(row[:PART2_POINTS_COL+1])
     table_str = tabulate.tabulate(table_str, headers=["#", "+-", "Score", "Name", "CompletionTime", "pts", "Part1", "pts", "Part2", "pts"])
     return add_header_footer(table_str, day, year, leaderboard, last_data_update)
 
 def print_short_lb_table(table, day, year, leaderboard, last_data_update):
     table_str = []
     for row in table:
-        table_str.append(row[:-6])
+        table_str.append(row[:TOTAL_POINTS_COL+1])
     table_str = tabulate.tabulate(table_str, headers=["#", "+-", "Score", "Name", "CompletionTime", "pts"])
     return add_header_footer(table_str, day, year, leaderboard, last_data_update)
 
 def print_short_lb_table_specific_day(table, day, year, leaderboard, last_data_update):
     table_str = []
     for row in table:
-        if row[4] != DNF_STRING:
-            table_str.append([row[0]] + row[3:-6])
+        if row[TOTAL_TIME_COL] != DNF_STRING:
+            table_str.append([row[RANK_COL]] + row[NAME_COL:TOTAL_POINTS_COL+1])
     table_str = tabulate.tabulate(table_str, headers=["#", "Name", "CompletionTime", "pts"])
     return add_header_footer(table_str, day, year, leaderboard, last_data_update)
 
 def print_full_lb_table_specific_day(table, day, year, leaderboard, last_data_update):
     table_str = []
     for row in table:
-        if row[6] != DNF_STRING:
-            table_str.append([row[0]] + row[3:-2])
+        if row[PART2_TIME_COL] != DNF_STRING:
+            table_str.append([row[RANK_COL]] + row[NAME_COL:PART2_POINTS_COL+1])
     table_str = tabulate.tabulate(table_str, headers=["#", "Name", "CompletionTime", "pts", "Part1", "pts", "Part2", "pts"])
     return add_header_footer(table_str, day, year, leaderboard, last_data_update)
 

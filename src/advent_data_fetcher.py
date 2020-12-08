@@ -1,25 +1,29 @@
 import json, requests
 from secret import LID_1, LID_2, LID_3
 from datetime import datetime, timedelta
-from global_vars import last_data_update, TEST_MODE, test_data, COOKIES, data
+from constants import TEST_MODE, COOKIES, test_data
 from data_classes import Member, Day
 
-def fetch_data(year, leaderboard, force=False):
-    global last_data_update
+data = []
+
+def fetch_data(year, leaderboard, last_data_update, force=False):
+    global data
     now = datetime.now()
     if force or (year, leaderboard) not in last_data_update:
         print("  lb command... fetching data, none exists" if not force else "  lb command... FORCE FETCHING DATA")
         last_data_update[(year, leaderboard)] = now
-        if get_json_data(year, leaderboard):
-            update_data()
+        json_data = get_json_data(year, leaderboard)
+        if json_data:
+            data = update_data(json_data)
     elif (now - last_data_update[(year, leaderboard)]) > timedelta(minutes=15):
         print("  lb command... fetching data, 15 minutes has passed")
-        if get_json_data(year, leaderboard):
-            update_data()
+        last_data_update[(year, leaderboard)] = now
+        json_data = get_json_data(year, leaderboard)
+        if json_data:
+            data = update_data(json_data)
     else:
         print("  lb command... using existing data, 15 minutes not passed")
     return data
-
 
 def get_json_data(year, leaderboard):
     if leaderboard=="1":
@@ -29,25 +33,26 @@ def get_json_data(year, leaderboard):
     elif leaderboard=="3":
         leaderboard = LID_3
 
-    global json_data
-    global data
-    data = []
     if TEST_MODE:
         json_data = json.loads(test_data)
     else:
         url = "https://adventofcode.com/" + year + "/leaderboard/private/view/" + leaderboard + ".json"
+        # url = "https://adventofcode.com/" + year + "/leaderboard/self"
         with requests.get(url, cookies=COOKIES) as response:
             html = response.text
+            # print(html)
             json_data = json.loads(html)
 
     return json_data
 
-def update_data():
+def update_data(json_data):
     global data
+    data = []
     for member_id in json_data["members"]:
-        data.append(read_member(member_id))
+        data.append(read_member(member_id, json_data))
+    return data
 
-def read_member(id):
+def read_member(id, json_data):
     member = json_data["members"][id]
     name = member["name"]
     last_star_ts = member["last_star_ts"]

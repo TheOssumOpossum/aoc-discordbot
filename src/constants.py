@@ -1,6 +1,6 @@
 import pytz
 import os
-from secret import *
+from secret import SESSION_COOKIE, LEADERBOARD, DISCORD_CLIENT_ID
 
 YEAR = "2020"
 DNF_STRING = "             DNF"
@@ -15,8 +15,5 @@ COOKIES = {
 DISCORD_CLIENT_ID = os.environ.get('ADVENT_BOT_ID', DISCORD_CLIENT_ID)
 LEADERBOARD = os.environ.get('LEADERBOARD', LEADERBOARD)
 
-json_data = {}
-data = []
-
 ####
-test_data = ''
+test_data = ""

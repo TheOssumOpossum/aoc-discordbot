@@ -1,6 +1,7 @@
 from discord.ext import commands, tasks
 from datetime import datetime
-from bot import send_message, TIMEZONE
+from discord_api import send_message
+from constants import TIMEZONE
 
 class Heartbeat(commands.Cog):
    def __init__(self, bot):

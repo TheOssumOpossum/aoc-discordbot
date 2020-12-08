@@ -1,95 +1,16 @@
-import json, datetime, requests, discord, pytz, tabulate, os
-from discord.ext import tasks, commands
-from contextlib import suppress
-tabulate.PRESERVE_WHITESPACE = True
-from utils import arg_parser
-from secret import LID_1, LID_2, LID_3
-import timecog, table_printer
-from global_vars import *
-from advent_data_fetcher import fetch_data
+import datetime
+from constants import YEAR, DNF_STRING, H24_STRING, DNF_STRING, SECONDS_IN_A_DAY
 
-async def handle_message(message):
-    content = message.content.lower()
-    channel_name = message.channel.name
-    if len(content) >= 100:
-        print(" message_handler... ignoring long message from {0.author}".format(message))
-        return
-    if len(content) <= 1 or content[0] != '?':
-        return
-    command, *args = content[1:].split(' ')
-    print(" message_handler... Received command:", command, "with args:", args)
-
-    arg_ls, arg_dic = arg_parser(args)
-
-    if channel_name == "advent-of-code-2020" and (command == "lb" or command == "leaderboard"):
-        await handle_command_lb(arg_ls, arg_dic, message.channel, last_data_update)
-    elif channel_name == "advent-of-code-2020" and (command == "help"):
-        f = open("messages/help.txt",'r')
-        help_msg = f.read()
-        f.close()
-        await send_message(help_msg, message.channel)
-    elif channel_name == "advent-of-code-2020" and (command == "ping"):
-        await send_message("pong", message.channel)
-    elif channel_name == "advent-of-code-2020" and (command == "repo"):
-        f = open("messages/help.txt",'r')
-        help_msg = f.read()
-        f.close()
-        await send_message("`https://github.com/TheOssumOpossum/discordbot`", message.channel)
-
-async def send_message(text, channel):
-    await channel.send(text)
-
-##################### Leaderboard command handler ###############################
-
-#lb                 get todays leaderboard (short)
-#lb n               get leaderboard for a certain day
-#lb   --detailed    get todays leaderboard (long)
-#lb n --detailed    get specific leaderboard for a day (long)
-
-#-f force refresh data
-
-async def handle_command_lb(arg_ls, arg_dic, channel, last_data_update):
-    year = YEAR if "year" not in arg_dic else arg_dic["year"]
-    leaderboard = LEADERBOARD if "leaderboard" not in arg_dic else arg_dic["leaderboard"]
-    global data
-    data = fetch_data(year, leaderboard, "force" in arg_dic)
-
-    if len(arg_ls) == 0:
-        day = str(datetime.datetime.now(TIMEZONE).day)
-        table = get_table(day)
-        if "detailed" in arg_dic:
-            #lb d
-            message = table_printer.print_full_lb_table(table, day, year, leaderboard, last_data_update)
-        else:
-            #lb
-            message = table_printer.print_short_lb_table(table, day, year, leaderboard, last_data_update)
-    else:
-        day = arg_ls[0]
-        if int(day) > int(datetime.datetime.now(TIMEZONE).day):
-            await send_message("```I can't see into the future```", channel)
-            return
-        table = get_table(day,sorter="today_score")
-        if "detailed" in arg_dic:
-            #lb 1 d
-            message = table_printer.print_full_lb_table_specific_day(table, day, year, leaderboard, last_data_update)
-        else:
-            #lb 1
-            message = table_printer.print_short_lb_table_specific_day(table, day, year, leaderboard, last_data_update)
-
-    await send_message(message, channel)
-
-################### Get Table ##########################
-
-def get_table(day, sorter="local_score"):
-    table = populate_table(day, sorter)
+def get_table(day, data, sorter="local_score"):
+    table = populate_table(day, data, sorter)
     assign_ranks(table, sorter)
     assign_rank_delta(table, day)
     return table
 
-def populate_table(day, sorter):
+def populate_table(day, data, sorter):
     table = []
     for member in data:
-        row = get_member_columns(member, day)
+        row = get_member_columns(member, day, data)
         table.append(row)
     if sorter == "local_score":
         table = sorted(table, key=lambda row: (row[2], -float(row[-2])), reverse=True)
@@ -150,7 +71,7 @@ def assign_ranks(table, sorter):
             buffer += 1
         member[0] = cur_rank
 
-def get_member_columns(member, day):
+def get_member_columns(member, day, data):
     row = []
 
     rank = 0
@@ -163,10 +84,10 @@ def get_member_columns(member, day):
     part2 = get_part2_time(member, day)
     last_star_ts = member.last_star_ts
 
-    times1 = get_times_for_day_part1(day)
+    times1 = get_times_for_day_part1(day, data)
     points1 = get_points1(member, day, times1)
 
-    times2 = get_times_for_day_part2(day)
+    times2 = get_times_for_day_part2(day, data)
     points2 = get_points2(member, day, times2)
 
     score_delta = points1 + points2
@@ -253,7 +174,7 @@ def get_points2(member, day, times):
     else:
         return 0
 
-def get_times_for_day_part1(day):
+def get_times_for_day_part1(day, data):
     times = []
     for member in data:
         if day in member.days:
@@ -261,37 +182,10 @@ def get_times_for_day_part1(day):
     times.sort()
     return times
 
-def get_times_for_day_part2(day):
+def get_times_for_day_part2(day, data):
     times = []
     for member in data:
         if day in member.days and member.days[day].part2:
             times.append(member.days[day].part2)
     times.sort()
     return times
-
-###
-
-def get_channel(channels, channel_name):
-    for channel in client.get_all_channels():
-        print(channel)
-        if channel.name == channel_name:
-            return channel
-    return None
-
-
-async def on_ready():
-    print('discordbot... Logged on as {0}!'.format(client.user))
-    await client.change_presence(status=discord.Status.invisible)
-
-async def on_message(message):
-    if message.author.name != client.user.name:
-        print('discordbot... Message from {0.author}: {0.content}'.format(message))
-    await handle_message(message)
-
-# client = MyClient(status="dnd")
-client = commands.Bot(command_prefix=commands.when_mentioned_or('~'))
-client.add_listener(on_ready)
-client.add_listener(on_message)
-client.load_extension('timecog')
-
-client.run(DISCORD_CLIENT_ID)
