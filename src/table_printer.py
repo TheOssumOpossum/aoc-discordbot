@@ -29,7 +29,7 @@ def print_short_lb_table_specific_day(table, day, year, leaderboard, last_data_u
 def print_full_lb_table_specific_day(table, day, year, leaderboard, last_data_update):
     table_str = []
     for row in table:
-        if row[PART2_TIME_COL] != DNF_STRING:
+        if row[PART1_TIME_COL] != DNF_STRING:
             table_str.append([row[RANK_COL]] + row[NAME_COL:PART2_POINTS_COL+1])
     table_str = tabulate.tabulate(table_str, headers=["#", "Name", "CompletionTime", "pts", "Part1", "pts", "Part2", "pts"])
     return add_header_footer(table_str, day, year, leaderboard, last_data_update)
