@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from secret import DISCORD_CLIENT_ID
+from constants import DISCORD_CLIENT_ID
 import timecog
 from discord_message_handler import handle_message
 
