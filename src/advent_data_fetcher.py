@@ -1,7 +1,6 @@
 import json, requests
-from secret import LID_1, LID_2, LID_3
 from datetime import datetime, timedelta
-from constants import TEST_MODE, COOKIES, test_data
+from constants import TEST_MODE, COOKIES, test_data, LID_1, LID_2, LID_3
 from data_classes import Member, Day
 
 data = []

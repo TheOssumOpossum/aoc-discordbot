@@ -1,6 +1,6 @@
 import pytz
 import os
-from secret import SESSION_COOKIE, LEADERBOARD, DISCORD_CLIENT_ID
+from secret import SESSION_COOKIE, LEADERBOARD, DISCORD_CLIENT_ID, LID_1, LID_2, LID_3
 
 YEAR = "2020"
 DNF_STRING = "             DNF"
@@ -14,6 +14,9 @@ COOKIES = {
 }
 DISCORD_CLIENT_ID = os.environ.get('ADVENT_BOT_ID', DISCORD_CLIENT_ID)
 LEADERBOARD = os.environ.get('LEADERBOARD', LEADERBOARD)
+LID_1 = os.environ.get('LID_1', LID_1)
+LID_2 = os.environ.get('LID_2', LID_2)
+LID_3 = os.environ.get('LID_3', LID_3)
 
 ####
 test_data = ""
