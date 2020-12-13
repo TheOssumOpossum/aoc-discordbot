@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from constants import TEST_MODE, COOKIES, test_data, LID_1, LID_2, LID_3
 from data_classes import Member, Day
 
-data = []
+data = {}
 
 def fetch_data(year, leaderboard, last_data_update, force=False):
     global data
@@ -13,16 +13,16 @@ def fetch_data(year, leaderboard, last_data_update, force=False):
         last_data_update[(year, leaderboard)] = now
         json_data = get_json_data(year, leaderboard)
         if json_data:
-            data = update_data(json_data)
+            data[leaderboard] = update_data(json_data, leaderboard)
     elif (now - last_data_update[(year, leaderboard)]) > timedelta(minutes=15):
         print("  lb command... fetching data, 15 minutes has passed")
         last_data_update[(year, leaderboard)] = now
         json_data = get_json_data(year, leaderboard)
         if json_data:
-            data = update_data(json_data)
+            data[leaderboard] = update_data(json_data, leaderboard)
     else:
         print("  lb command... using existing data, 15 minutes not passed")
-    return data
+    return data[leaderboard]
 
 def get_json_data(year, leaderboard):
     if leaderboard=="1":
@@ -44,12 +44,12 @@ def get_json_data(year, leaderboard):
 
     return json_data
 
-def update_data(json_data):
+def update_data(json_data, leaderboard):
     global data
-    data = []
+    data[leaderboard] = []
     for member_id in json_data["members"]:
-        data.append(read_member(member_id, json_data))
-    return data
+        data[leaderboard].append(read_member(member_id, json_data))
+    return data[leaderboard]
 
 def read_member(id, json_data):
     member = json_data["members"][id]
